@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Tài Liệu Đào Tạo Y Khoa - Bệnh Viện Bạch Mai</title>
+  <meta name="description" content="Hệ thống tra cứu, quản lý và rà soát tài liệu chương trình đào tạo của Viện Đào tạo - Nghiên cứu Y Dược Bạch Mai.">
+  <link rel="stylesheet" href="style.css">
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header Hero Banner -->
+    <header>
+      <div class="header-content">
+        <div class="brand-section">
+          <div class="logo-container">
+            <i class="fa-solid fa-hospital-user"></i>
+          </div>
+          <div class="brand-title">
+            <h1>BV BẠCH MAI</h1>
+            <p>Hệ Thống Tra Cứu & Quản Lý Chương Trình Đào Tạo Y Khoa 2026</p>
+          </div>
+        </div>
+        <button id="themeToggleBtn" class="theme-switch" aria-label="Đổi giao diện">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Panel -->
+    <div class="metrics-grid">
+      <div class="metric-card total-card">
+        <div class="metric-icon"><i class="fa-solid fa-book-medical"></i></div>
+        <div class="metric-info">
+          <span id="statTotal" class="metric-value">0</span>
+          <span class="metric-label">Tổng số chương trình</span>
+        </div>
+      </div>
+      <div class="metric-card co-card">
+        <div class="metric-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="metric-info">
+          <span id="statCo" class="metric-value">0</span>
+          <span class="metric-label">Tài liệu đầy đủ (Có)</span>
+        </div>
+      </div>
+      <div class="metric-card thieu-card">
+        <div class="metric-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <div class="metric-info">
+          <span id="statThieu" class="metric-value">0</span>
+          <span class="metric-label">Tài liệu còn thiếu</span>
+        </div>
+      </div>
+      <div class="metric-card ngoai-card">
+        <div class="metric-icon"><i class="fa-solid fa-file-shield"></i></div>
+        <div class="metric-info">
+          <span id="statNgoai" class="metric-value">0</span>
+          <span class="metric-label">Nguồn ngoài BVBM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtering Control Panel -->
+    <section class="controls-panel">
+      <div class="search-wrapper">
+        <input type="text" id="searchInput" class="search-input" placeholder="Nhập từ khóa tìm kiếm (Ví dụ: Tên chương trình, Đối tượng học viên, Ghi chú...)">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      </div>
+      
+      <div class="filters-row">
+        <div class="select-group">
+          <label for="filterSection">Chuyên ngành / Chương</label>
+          <select id="filterSection" class="filter-select">
+            <option value="all">Tất cả phân nhóm</option>
+          </select>
+        </div>
+        
+        <div class="select-group">
+          <label for="filterLevel">Cấp độ đào tạo</label>
+          <select id="filterLevel" class="filter-select">
+            <option value="all">Tất cả cấp độ</option>
+            <option value="Cơ bản">Cơ bản</option>
+            <option value="Nâng cao">Nâng cao</option>
+            <option value="Chuyên sâu">Chuyên sâu</option>
+          </select>
+        </div>
+        
+        <div class="select-group">
+          <label for="filterStatus">Trạng thái tài liệu</label>
+          <select id="filterStatus" class="filter-select">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="Có">Có</option>
+            <option value="Thiếu">Thiếu</option>
+            <option value="Chưa rõ">Chưa rõ</option>
+          </select>
+        </div>
+
+        <div class="select-group">
+          <label for="filterSource">Nguồn tài liệu</label>
+          <select id="filterSource" class="filter-select">
+            <option value="all">Tất cả nguồn gốc</option>
+            <option value="Của BVBM ban hành">Của BVBM ban hành</option>
+            <option value="Không phải của BVBM ban hành">Ngoài BVBM ban hành</option>
+            <option value="Của BVBM và nguồn khác">Cả hai nguồn</option>
+            <option value="Chưa rõ">Chưa rõ</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="resetFiltersBtn" class="btn btn-secondary"><i class="fa-solid fa-filter-circle-xmark"></i> Xóa bộ lọc</button>
+        <button id="exportExcelBtn" class="btn btn-secondary"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
+      </div>
+    </section>
+
+    <!-- View Toggle and Results Area -->
+    <div class="view-header">
+      <div id="resultsCount" class="results-count">Đang tìm thấy 0 chương trình</div>
+      <div class="view-toggles">
+        <button id="gridToggle" class="toggle-btn active" title="Dạng thẻ"><i class="fa-solid fa-grip"></i> Dạng Thẻ</button>
+        <button id="tableToggle" class="toggle-btn" title="Dạng bảng"><i class="fa-solid fa-list"></i> Dạng Bảng</button>
+      </div>
+    </div>
+
+    <!-- Card Grid Container -->
+    <main id="cardsContainer" class="cards-grid"></main>
+
+    <!-- Table Container -->
+    <div id="tableWrapper" class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>TT / ID</th>
+            <th>Tên chương trình</th>
+            <th>Chuyên ngành</th>
+            <th>Cấp độ</th>
+            <th>Tình trạng tài liệu</th>
+            <th>Nguồn gốc</th>
+            <th class="col-action">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="pagination-container"></div>
+  </div>
+
+  <!-- Detail Information Modal -->
+  <div id="detailModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <span id="modalSection" class="card-section"></span>
+          <h2 id="modalTitle">Tên Chương Trình Đào Tạo</h2>
+        </div>
+        <button id="modalCloseBtn" class="modal-close" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Số ID / Thứ tự</span>
+            <span id="modalId" class="detail-value">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Thứ tự chuyên ngành (TT CN)</span>
+            <span id="modalTtCn" class="detail-value">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Thời lượng đào tạo</span>
+            <span id="modalDuration" class="detail-value">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Cấp độ chương trình</span>
+            <span id="modalLevel" class="detail-value">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Tài liệu chính thức</span>
+            <span id="modalDocStatus" class="detail-value">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Nguồn ban hành</span>
+            <span id="modalDocSource" class="detail-value">-</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Đối tượng học viên</span>
+          <div id="modalAudience" class="detail-value">-</div>
+        </div>
+
+        <div id="modalNoteContainer" class="detail-item">
+          <span class="detail-label">Ghi chú chung</span>
+          <div id="modalNote" class="note-box">-</div>
+        </div>
+
+        <div id="modalReviewNoteContainer" class="detail-item">
+          <span class="detail-label">Ghi chú rà soát tài liệu</span>
+          <div id="modalReviewNote" class="note-box review-note">-</div>
+        </div>
+
+        <!-- Online Drive Document section -->
+        <div class="detail-item">
+          <span class="detail-label">Tài liệu liên kết (Online)</span>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
+            <a id="modalDriveBtn" href="#" target="_blank" class="btn btn-primary"><i class="fa-solid fa-cloud-arrow-down"></i> Mở Drive Tài liệu</a>
+            <a id="modalSearchDriveBtn" href="#" target="_blank" class="btn btn-secondary"><i class="fa-solid fa-magnifying-glass"></i> Tìm trên Drive</a>
+          </div>
+        </div>
+
+        <!-- Detailed program upload/download buttons -->
+        <div class="detail-item">
+          <span class="detail-label">Tài liệu chi tiết (Local Upload & Download)</span>
+          <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+            <!-- Upload Area -->
+            <div class="uploader-box">
+              <i class="fa-solid fa-cloud-arrow-up uploader-icon"></i>
+              <div class="uploader-text"><b>Kéo thả hoặc Click chọn tệp chi tiết</b> để lưu vào thư mục con riêng</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">Hỗ trợ: PDF, Word, Excel (Max 50MB)</div>
+              <input type="file" id="localFileInput" class="uploader-input">
+            </div>
+
+            <!-- Download / Status Area -->
+            <div id="localFileStatus" style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); display: none;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fa-solid fa-file-circle-check" style="font-size: 1.5rem; color: var(--success);"></i>
+                <div>
+                  <div id="localFileName" style="font-weight: 600; font-size: 0.95rem;">document.pdf</div>
+                  <div style="font-size: 0.8rem; color: var(--text-secondary);">Lưu trong thư mục con riêng</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <button id="localFileDownloadBtn" class="btn btn-primary" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-download"></i> Tải về</button>
+                <button id="localFileDeleteBtn" class="btn btn-danger" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-trash"></i> Xóa</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Chatbot Floating Widget -->
+  <div id="aiChatTrigger" title="Trợ lý AI Tìm kiếm">
+    <i class="fa-solid fa-robot"></i>
+    <span class="pulse-badge"></span>
+  </div>
+
+  <div id="aiChatWindow">
+    <div class="ai-chat-header">
+      <div class="ai-chat-brand">
+        <i class="fa-solid fa-robot"></i>
+        <div class="ai-chat-title">
+          <h4>Trợ Lý AI Bạch Mai</h4>
+          <span id="aiChatModeStatus">Chế độ Offline</span>
+        </div>
+      </div>
+      <div class="ai-chat-actions">
+        <button id="aiChatSettingsBtn" class="ai-chat-btn" title="Cấu hình API Key"><i class="fa-solid fa-gear"></i></button>
+        <button id="aiChatCloseBtn" class="ai-chat-btn" title="Đóng"><i class="fa-solid fa-minus"></i></button>
+      </div>
+    </div>
+
+    <!-- API Settings Panel -->
+    <div id="aiChatSettings" class="ai-chat-settings">
+      <div class="ai-settings-title">Cấu hình AI Agent</div>
+      <div class="ai-mode-toggle">
+        <button id="aiModeOffline" class="ai-mode-btn active">Mặc định (Offline)</button>
+        <button id="aiModeOnline" class="ai-mode-btn">Gemini API (Online)</button>
+      </div>
+      <div id="aiApiKeyGroup" class="ai-key-input-container" style="display: none;">
+        <input type="password" id="aiApiKeyInput" class="ai-key-input" placeholder="Nhập Google/Gemini API Key...">
+        <button id="aiSaveKeyBtn" class="btn btn-primary" style="padding: 0.3rem 0.75rem; font-size: 0.75rem; white-space: nowrap;">Lưu</button>
+      </div>
+    </div>
+
+    <!-- Chat Messages -->
+    <div id="aiChatMessages" class="ai-chat-messages">
+      <!-- Initial greeting -->
+      <div class="ai-message bot">
+        <div class="ai-msg-avatar"><i class="fa-solid fa-robot"></i></div>
+        <div class="ai-msg-bubble">
+          <p>Xin chào! Tôi là <b>Trợ lý AI</b> hỗ trợ tra cứu tài liệu chương trình đào tạo của Bệnh viện Bạch Mai.</p>
+          <p>Tôi đang chạy ở <b>chế độ ngoại tuyến (Offline)</b>, có thể giúp bạn tìm nhanh các chương trình, tài liệu thiếu, thời lượng học, v.v.</p>
+          <p>Bạn có thể click vào các gợi ý nhanh bên dưới hoặc nhập câu hỏi trực tiếp.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Suggestion Chips -->
+    <div class="ai-chat-chips">
+      <div class="ai-chip" data-query="Tìm kiếm chương trình Hồi sức cấp cứu">🔍 CT Hồi sức</div>
+      <div class="ai-chip" data-query="Những chương trình nào đang thiếu tài liệu?">⚠️ Tài liệu thiếu</div>
+      <div class="ai-chip" data-query="Liệt kê các chương trình có cấp độ nâng cao">🎓 Cấp độ Nâng cao</div>
+      <div class="ai-chip" data-query="Làm sao để xem hoặc tải tài liệu?">💡 Cách tải/xem</div>
+    </div>
+
+    <!-- Chat Input Area -->
+    <div class="ai-chat-input-area">
+      <input type="text" id="aiChatInput" class="ai-chat-input" placeholder="Nhập câu hỏi của bạn...">
+      <button id="aiChatSendBtn" class="ai-chat-send" disabled><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="ai-chatbot.js"></script>
+</body>
+</html>

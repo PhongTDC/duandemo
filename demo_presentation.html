@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thuyết trình Dự án - Bệnh viện Bạch Mai</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .pres-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .slide-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2rem;
+      animation: fadeIn 0.5s ease;
+    }
+    .slide-title {
+      font-size: 2.2rem;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 0.5rem;
+    }
+    .slide-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .bullet-list li {
+      font-size: 1.1rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      line-height: 1.5;
+    }
+    .bullet-list i {
+      color: var(--primary);
+      font-size: 1.3rem;
+      margin-top: 0.2rem;
+    }
+    .bullet-list .icon-danger {
+      color: var(--danger);
+    }
+    .bullet-list .icon-success {
+      color: var(--success);
+    }
+    .pres-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-glass);
+      padding-top: 1.5rem;
+      margin-top: 2rem;
+    }
+    .pres-nav-btn {
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+    }
+    .card-graphic {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      box-shadow: var(--shadow-md);
+      text-align: center;
+    }
+    .pain-card {
+      border-left: 5px solid var(--danger);
+    }
+    .success-card {
+      border-left: 5px solid var(--success);
+    }
+    .big-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    .big-icon.danger { color: var(--danger); }
+    .big-icon.success { color: var(--success); }
+    .big-icon.primary { color: var(--primary); }
+    
+    /* Custom style for showing simulated Google Sheet */
+    .simulated-sheet {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      background: #ffffff;
+      color: #333;
+    }
+    .simulated-sheet th, .simulated-sheet td {
+      border: 1px solid #ddd;
+      padding: 4px 8px;
+      text-align: left;
+    }
+    .simulated-sheet th {
+      background: #f1f1f1;
+    }
+    .sheet-warning {
+      background: #ffebeb;
+      color: #d32f2f;
+      font-weight: 600;
+    }
+    .sheet-success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="pres-container">
+      
+      <!-- Slide Container -->
+      <div id="slideArea" class="slide-content">
+        <!-- Slides will be loaded dynamically here -->
+      </div>
+
+      <!-- Slide Controls Footer -->
+      <div class="pres-footer">
+        <div style="font-weight: 500; color: var(--text-secondary);">
+          Slide <span id="currentSlideNum">1</span> / 5
+        </div>
+        <div style="display: flex; gap: 1rem;">
+          <button id="prevSlideBtn" class="btn btn-secondary pres-nav-btn"><i class="fa-solid fa-arrow-left"></i> Trước</button>
+          <button id="nextSlideBtn" class="btn btn-primary pres-nav-btn">Tiếp theo <i class="fa-solid fa-arrow-right"></i></button>
+          <a href="index.html" class="btn btn-secondary pres-nav-btn" style="background: var(--secondary); color: white; border: none;"><i class="fa-solid fa-laptop-code"></i> Live Demo</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const slides = [
+      // Slide 1: Welcome
+      {
+        title: "SỐ HÓA & TRỢ LÝ AI Y KHOA",
+        subtitle: "Hệ thống quản lý và rà soát tài liệu đào tạo chương trình BV Bạch Mai 2026",
+        html: `
+          <div class="grid-2">
+            <div>
+              <ul class="bullet-list">
+                <li><i class="fa-solid fa-hospital-user"></i> <b>Cơ quan áp dụng:</b> Viện Đào tạo và Nghiên cứu Y Dược Bạch Mai.</li>
+                <li><i class="fa-solid fa-server"></i> <b>Nhiệm vụ cốt lõi:</b> Số hóa danh mục 400+ chương trình đào tạo liên tục và rà soát tính pháp lý của hồ sơ tài liệu gốc.</li>
+                <li><i class="fa-solid fa-brain"></i> <b>Ứng dụng đột phá:</b> Trợ lý AI (Gemini Agent) hỗ trợ tìm kiếm, thống kê tự động bằng ngôn ngữ tự nhiên.</li>
+              </ul>
+            </div>
+            <div class="card-graphic">
+              <div class="big-icon primary"><i class="fa-solid fa-hospital-user"></i></div>
+              <h3>BỆNH VIỆN BẠCH MAI</h3>
+              <p style="margin-top: 0.5rem; color: var(--text-secondary);">Viện Đào tạo & Nghiên cứu Y Dược Bạch Mai</p>
+            </div>
+          </div>
+        `
+      },
+      // Slide 2: Pain Points
+      {
+        title: "NỖI ĐAU THỰC TẾ (PAIN POINTS)",
+        subtitle: "Khó khăn trong quy trình rà soát thủ công trước khi có AI",
+        html: `
+          <div class="grid-2">
+            <div>
+              <ul class="bullet-list">
+                <li><i class="fa-solid fa-circle-xmark icon-danger"></i> <b>Quá tải thông tin:</b> Quản lý hơn 400 chương trình qua bảng tính Google Sheets / Excel khổng lồ, rất khó theo dõi.</li>
+                <li><i class="fa-solid fa-circle-xmark icon-danger"></i> <b>Thất thoát link tài liệu:</b> Đường dẫn Drive tài liệu ban hành bị phân tán, không khớp mã số hoặc bị thiếu hụt.</li>
+                <li><i class="fa-solid fa-circle-xmark icon-danger"></i> <b>Rủi ro thanh tra:</b> Khi có đợt kiểm định chất lượng, việc tìm kiếm hồ sơ minh chứng mất nhiều ngày và dễ xảy ra sai sót.</li>
+                <li><i class="fa-solid fa-circle-xmark icon-danger"></i> <b>Báo cáo thủ công:</b> Việc đếm số lượng tài liệu "Có"/"Thiếu", nguồn gốc trong/ngoài bệnh viện tốn nhiều giờ đối chiếu chéo.</li>
+              </ul>
+            </div>
+            <div>
+              <div class="card-graphic pain-card">
+                <h4 style="margin-bottom: 0.75rem; color: var(--danger);"><i class="fa-solid fa-table"></i> Giao diện Bảng tính gốc (Phức tạp & Rời rạc)</h4>
+                <table class="simulated-sheet">
+                  <thead>
+                    <tr><th>ID</th><th>Tên Chương Trình</th><th>Tình trạng</th><th>Link Drive</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>1</td><td>Chuyên khoa cơ bản Hồi sức</td><td class="sheet-success">Có</td><td>Link...</td></tr>
+                    <tr><td>2</td><td>Chuyên khoa cơ bản Nhi</td><td class="sheet-success">Có</td><td>Link...</td></tr>
+                    <tr><td>3</td><td>CKCB Tai mũi họng</td><td class="sheet-warning">Thiếu</td><td>NULL</td></tr>
+                    <tr><td>4</td><td>CKCB Ung thư</td><td class="sheet-warning">Thiếu</td><td>NULL</td></tr>
+                  </tbody>
+                </table>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Cán bộ rà soát phải kéo cuộn hàng nghìn ô để đếm và tìm link tài liệu gốc.</p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 3: Live Web Portal
+      {
+        title: "KẾT QUẢ: SỐ HÓA & TRỰC QUAN HÓA",
+        subtitle: "Chuyển đổi số toàn diện quy trình rà soát tài liệu đào tạo",
+        html: `
+          <div class="grid-2">
+            <div>
+              <ul class="bullet-list">
+                <li><i class="fa-solid fa-circle-check icon-success"></i> <b>Bảng điều khiển trực quan:</b> Hệ thống hiển thị biểu đồ phân bổ cấp độ học, tự động tính tỷ lệ tài liệu "Có"/"Thiếu".</li>
+                <li><i class="fa-solid fa-circle-check icon-success"></i> <b>Bộ lọc đa năng:</b> Tìm kiếm tức thì theo chuyên ngành, cấp độ hoặc tình trạng rà soát.</li>
+                <li><i class="fa-solid fa-circle-check icon-success"></i> <b>Đính kèm cục bộ (IndexedDB):</b> Cán bộ quản lý có thể tải trực tiếp file PDF/Word/Excel lưu trữ riêng cho từng chương trình ngay trên trình duyệt.</li>
+                <li><i class="fa-solid fa-circle-check icon-success"></i> <b>Đồng bộ hóa dữ liệu:</b> Xuất báo cáo Excel cập nhật mới chỉ với một nút bấm.</li>
+              </ul>
+            </div>
+            <div class="card-graphic success-card">
+              <div class="big-icon success"><i class="fa-solid fa-chart-pie"></i></div>
+              <h3>KẾT QUẢ ĐẠT ĐƯỢC</h3>
+              <div style="margin-top: 1rem; display: flex; justify-content: space-around;">
+                <div>
+                  <h4 style="color: var(--primary);">400+</h4>
+                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Chương trình</span>
+                </div>
+                <div>
+                  <h4 style="color: var(--success);">100%</h4>
+                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Số hóa</span>
+                </div>
+                <div>
+                  <h4 style="color: var(--secondary);">0s</h4>
+                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Độ trễ tra cứu</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 4: AI Agent RAG
+      {
+        title: "ĐỘT PHÁ CÔNG NGHỆ: TRỢ LÝ AI AGENT",
+        subtitle: "Ứng dụng mô hình Gemini hỗ trợ ngôn ngữ tự nhiên",
+        html: `
+          <div class="grid-2">
+            <div>
+              <ul class="bullet-list">
+                <li><i class="fa-solid fa-microchip"></i> <b>Text-to-SQL DB Agent:</b> AI tự chuyển đổi câu hỏi tự nhiên thành mã lệnh SQL để truy vấn CSDL SQLite thực tế, loại bỏ 100% việc AI tự bịa câu trả lời.</li>
+                <li><i class="fa-solid fa-bolt"></i> <b>Trợ lý Chatbot Nhúng (Offline/Online):</b> Chatbot nổi ở góc màn hình có khả năng tìm kiếm cực nhanh mà không cần kết nối mạng.</li>
+                <li><i class="fa-solid fa-link"></i> <b>Hành động tự động (DOM Integration):</b> Trợ lý AI có thể tự động mở bảng chi tiết của chương trình khi người dùng click vào link trong khung chat.</li>
+              </ul>
+            </div>
+            <div class="card-graphic">
+              <div class="big-icon primary"><i class="fa-solid fa-robot"></i></div>
+              <h3>TRỢ LÝ TÌM KIẾM AI</h3>
+              <p style="font-style: italic; color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">"Có bao nhiêu chương trình Nhi khoa còn thiếu tài liệu chính thức?"</p>
+              <div style="background: var(--bg-primary); padding: 0.5rem; border-radius: var(--radius-sm); font-size: 0.8rem; text-align: left; margin-top: 0.75rem; font-family: monospace;">
+                SELECT COUNT(*) FROM programs WHERE name LIKE '%Nhi%' AND doc_status='Thiếu';
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 5: Value
+      {
+        title: "GIÁ TRỊ MANG LẠI CHO BỆNH VIỆN",
+        subtitle: "Hiệu quả thực tế sau khi áp dụng giải pháp công nghệ mới",
+        html: `
+          <div class="grid-2">
+            <div>
+              <ul class="bullet-list">
+                <li><i class="fa-solid fa-check-double icon-success"></i> <b>Tiết kiệm thời gian:</b> Rút ngắn thời gian rà soát, báo cáo tổng hợp từ **2 tuần xuống còn 2 phút**.</li>
+                <li><i class="fa-solid fa-check-double icon-success"></i> <b>Chính xác tuyệt đối:</b> Loại bỏ sai sót đếm thủ công, kiểm soát tức thì đường dẫn lưu trữ.</li>
+                <li><i class="fa-solid fa-check-double icon-success"></i> <b>Sẵn sàng kiểm định:</b> Xuất dữ liệu chứng cứ rà soát bất kỳ lúc nào để phục vụ các đoàn kiểm tra pháp lý.</li>
+                <li><i class="fa-solid fa-check-double icon-success"></i> <b>Trải nghiệm tối giản:</b> Mọi nhân viên y tế đều có thể tra cứu nhanh chương trình đào tạo bằng ngôn ngữ tự nhiên thông qua AI.</li>
+              </ul>
+            </div>
+            <div class="card-graphic success-card">
+              <div class="big-icon success"><i class="fa-solid fa-star"></i></div>
+              <h3>ĐÁNH GIÁ XUẤT SẮC</h3>
+              <p style="margin-top: 0.5rem; font-size: 1rem; font-weight: 600;">Sẵn sàng cho Demo Day VinUni!</p>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">Giải pháp thực tế - Công nghệ tiên phong - Độ hoàn thiện tối đa.</p>
+            </div>
+          </div>
+        `
+      }
+    ];
+
+    let currentSlide = 0;
+
+    const slideArea = document.getElementById('slideArea');
+    const prevBtn = document.getElementById('prevSlideBtn');
+    const nextBtn = document.getElementById('nextSlideBtn');
+    const slideNum = document.getElementById('currentSlideNum');
+
+    function renderSlide() {
+      const s = slides[currentSlide];
+      slideArea.innerHTML = `
+        <h2 class="slide-title">${s.title}</h2>
+        <p class="slide-subtitle">${s.subtitle}</p>
+        <div>${s.html}</div>
+      `;
+      slideNum.innerText = currentSlide + 1;
+      prevBtn.disabled = currentSlide === 0;
+      nextBtn.disabled = currentSlide === slides.length - 1;
+    }
+
+    prevBtn.addEventListener('click', () => {
+      if (currentSlide > 0) {
+        currentSlide--;
+        renderSlide();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        renderSlide();
+      }
+    });
+
+    // Initialize
+    renderSlide();
+  </script>
+</body>
+</html>
