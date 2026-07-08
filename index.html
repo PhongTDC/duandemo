@@ -8,8 +8,32 @@
   <link rel="stylesheet" href="style.css">
   <!-- FontAwesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- PDF.js for rendering local PDFs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 </head>
 <body>
+
+  <!-- Premium Login Overlay -->
+  <div id="loginOverlay" class="modal-overlay" style="display: none; justify-content: center; align-items: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;">
+    <div class="modal-content" style="max-width: 420px; padding: 2.5rem; background: var(--bg-surface); border-radius: var(--radius-md); box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid var(--border-glass); text-align: center;">
+      <div style="font-size: 3rem; color: var(--primary); margin-bottom: 0.5rem;"><i class="fa-solid fa-hospital-user"></i></div>
+      <h2 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.25rem; font-weight: 700;">Hệ Thống Đào Tạo Y Khoa</h2>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 2rem;">Bệnh Viện Bạch Mai - Viện Đào Tạo & Nghiên Cứu</p>
+      
+      <form id="loginForm" style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+        <div>
+          <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Tên đăng nhập (Username):</label>
+          <input type="text" id="loginUsername" required style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-primary); color: var(--text-primary);" placeholder="admin hoặc user">
+        </div>
+        <div>
+          <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Mật khẩu (Password):</label>
+          <input type="password" id="loginPassword" required style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-primary); color: var(--text-primary);" placeholder="Mật khẩu">
+        </div>
+        <div id="loginError" style="color: var(--danger); font-size: 0.8rem; display: none; text-align: center; margin-top: 0.25rem;">Tên đăng nhập hoặc mật khẩu không đúng!</div>
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem; font-weight: bold; margin-top: 0.5rem; width: 100%;"><i class="fa-solid fa-key"></i> Đăng nhập</button>
+      </form>
+    </div>
+  </div>
 
   <div class="container">
     <!-- Header Hero Banner -->
@@ -24,9 +48,13 @@
             <p>Hệ Thống Tra Cứu & Quản Lý Chương Trình Đào Tạo Y Khoa 2026</p>
           </div>
         </div>
-        <button id="themeToggleBtn" class="theme-switch" aria-label="Đổi giao diện">
-          <i class="fa-solid fa-moon"></i>
-        </button>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <span id="userBadge" style="font-size: 0.85rem; color: var(--text-secondary); background: var(--bg-secondary); padding: 0.35rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); display: none; font-weight: 500;"></span>
+          <button id="logoutBtn" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem; display: none; border-radius: var(--radius-sm);"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</button>
+          <button id="themeToggleBtn" class="theme-switch" aria-label="Đổi giao diện">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -233,6 +261,7 @@
                 </div>
               </div>
               <div style="display: flex; gap: 0.5rem;">
+                <button id="localFileViewBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-eye"></i> Xem tài liệu</button>
                 <button id="localFileDownloadBtn" class="btn btn-primary" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-download"></i> Tải về</button>
                 <button id="localFileDeleteBtn" class="btn btn-danger" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-trash"></i> Xóa</button>
               </div>
@@ -275,6 +304,13 @@
         <input type="password" id="aiApiKeyInput" class="ai-key-input" placeholder="Nhập Google/Gemini API Key...">
         <button id="aiSaveKeyBtn" class="btn btn-primary" style="padding: 0.3rem 0.75rem; font-size: 0.75rem; white-space: nowrap;">Lưu</button>
       </div>
+      <div id="aiLogsPanel" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-glass); display: flex; flex-direction: column; gap: 8px;">
+        <div class="ai-settings-title" style="margin-bottom: 5px; font-weight: 600;">Nhật ký AI Logs</div>
+        <div style="display: flex; gap: 8px;">
+          <button id="aiDownloadLogsBtn" class="btn btn-primary" style="flex: 1; padding: 0.3rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-download"></i> Tải Logs JSON</button>
+          <button id="aiClearLogsBtn" class="btn btn-danger" style="flex: 1; padding: 0.3rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-trash-can"></i> Xóa Logs</button>
+        </div>
+      </div>
     </div>
 
     <!-- Chat Messages -->
@@ -305,9 +341,242 @@
     </div>
   </div>
 
+
+  <!-- Premium Authentication Script -->
+  <script>
+    (function() {
+      function checkAuth() {
+        const loggedIn = localStorage.getItem('logged_in');
+        const overlay = document.getElementById('loginOverlay');
+        const container = document.querySelector('.container');
+        const chatTrigger = document.getElementById('aiChatTrigger');
+        const userBadge = document.getElementById('userBadge');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        if (loggedIn === 'true') {
+          if (overlay) overlay.style.display = 'none';
+          if (container) container.style.opacity = '1';
+          if (chatTrigger) chatTrigger.style.display = 'flex';
+          
+          const role = localStorage.getItem('user_role');
+          const username = localStorage.getItem('username');
+          if (userBadge) {
+            userBadge.innerText = `👤 ${username} (${role === 'admin' ? 'Admin' : 'User'})`;
+            userBadge.style.display = 'inline-block';
+          }
+          if (logoutBtn) logoutBtn.style.display = 'inline-block';
+          
+          applyRolePolicy();
+        } else {
+          if (overlay) overlay.style.display = 'flex';
+          if (container) container.style.opacity = '0.1';
+          if (chatTrigger) chatTrigger.style.display = 'none';
+          if (userBadge) userBadge.style.display = 'none';
+          if (logoutBtn) logoutBtn.style.display = 'none';
+        }
+      }
+      
+      function applyRolePolicy() {
+        const role = localStorage.getItem('user_role');
+        const styleId = 'role-policy-styles';
+        let styleEl = document.getElementById(styleId);
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = styleId;
+          document.head.appendChild(styleEl);
+        }
+        
+        if (role === 'user') {
+          // Hide uploader box and local file delete button for standard users
+          styleEl.innerHTML = `
+            .uploader-box { display: none !important; }
+            #localFileDeleteBtn { display: none !important; }
+          `;
+        } else {
+          styleEl.innerHTML = '';
+        }
+      }
+      
+      window.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('loginUsername');
+        const passwordInput = document.getElementById('loginPassword');
+        const errorMsg = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        checkAuth();
+        
+        if (form) {
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            
+            if (username === 'admin' && password === 'admin') {
+              localStorage.setItem('logged_in', 'true');
+              localStorage.setItem('user_role', 'admin');
+              localStorage.setItem('username', 'admin');
+              errorMsg.style.display = 'none';
+              checkAuth();
+            } else if (username === 'user' && password === 'user') {
+              localStorage.setItem('logged_in', 'true');
+              localStorage.setItem('user_role', 'user');
+              localStorage.setItem('username', 'user');
+              errorMsg.style.display = 'none';
+              checkAuth();
+            } else {
+              errorMsg.style.display = 'block';
+            }
+          });
+        }
+        
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('logged_in');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('username');
+            checkAuth();
+          });
+        }
+      });
+  <!-- Local File Viewer Overlay -->
+  <div id="localFileViewerContainer" class="modal-overlay" style="display: none; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000;">
+    <div class="modal-content" style="max-width: 90%; width: 1000px; height: 85%; display: flex; flex-direction: column; padding: 1.5rem; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+        <h3 style="font-weight: 700; color: var(--text-primary); margin: 0;">Bản Xem Trước Tài Liệu Cục Bộ</h3>
+        <button id="closeLocalFileViewerBtn" class="modal-close" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="localFileViewerContent" style="flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center; background: var(--bg-primary); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);"></div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Mobile Friendly Document Viewer -->
+  <div id="fullscreenViewer" class="modal-overlay" style="display: none; justify-content: center; align-items: center; background: rgba(0,0,0,0.9); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10001; flex-direction: column;">
+    <div style="width: 100%; padding: 1rem; background: rgba(25,25,25,0.85); backdrop-filter: blur(5px); display: flex; justify-content: space-between; align-items: center; color: #fff; z-index: 10002;">
+      <h3 id="fullscreenViewerTitle" style="font-size: 1rem; font-weight: 600; margin: 0; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Tài liệu</h3>
+      <div style="display: flex; gap: 0.5rem;">
+        <button id="fullscreenOpenTabBtn" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: var(--radius-sm);"><i class="fa-solid fa-up-right-from-square"></i> Mở tab mới</button>
+        <button id="fullscreenDownloadBtn" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: var(--radius-sm);"><i class="fa-solid fa-download"></i> Tải về</button>
+        <button id="closeFullscreenViewerBtn" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: var(--radius-sm);"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    
+    <div id="fullscreenViewerContent" style="flex: 1; width: 100%; display: flex; justify-content: center; align-items: center; overflow: auto; background: #111;"></div>
+    
+    <!-- PDF controls -->
+    <div id="pdfControlsBar" style="width: 100%; padding: 0.75rem; background: rgba(25,25,25,0.85); display: none; justify-content: center; align-items: center; gap: 1rem; color: #fff; font-size: 0.9rem; z-index: 10002;">
+      <button id="pdfPrevPageBtn" class="btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: var(--radius-sm);"><i class="fa-solid fa-chevron-left"></i> Trước</button>
+      <div>Trang <span id="pdfCurrentPageNum">1</span> / <span id="pdfTotalPages">1</span></div>
+      <button id="pdfNextPageBtn" class="btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: var(--radius-sm);">Sau <i class="fa-solid fa-chevron-right"></i></button>
+      <div style="border-left: 1px solid rgba(255,255,255,0.2); height: 20px; margin: 0 0.5rem;"></div>
+      <button id="pdfZoomOutBtn" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: var(--radius-sm);"><i class="fa-solid fa-minus"></i></button>
+      <span id="pdfZoomPercent">100%</span>
+      <button id="pdfZoomInBtn" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: var(--radius-sm);"><i class="fa-solid fa-plus"></i></button>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="data.js"></script>
   <script src="app.js"></script>
   <script src="ai-chatbot.js"></script>
+
+  <script>
+    (function() {
+      function checkAuth() {
+        const loggedIn = localStorage.getItem('logged_in');
+        const overlay = document.getElementById('loginOverlay');
+        const container = document.querySelector('.container');
+        const chatTrigger = document.getElementById('aiChatTrigger');
+        const userBadge = document.getElementById('userBadge');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        if (loggedIn === 'true') {
+          if (overlay) overlay.style.display = 'none';
+          if (container) container.style.opacity = '1';
+          if (chatTrigger) chatTrigger.style.display = 'flex';
+          
+          const role = localStorage.getItem('user_role');
+          const username = localStorage.getItem('username');
+          if (userBadge) {
+            userBadge.innerText = `👤 ${username} (${role === 'admin' ? 'Admin' : 'User'})`;
+            userBadge.style.display = 'inline-block';
+          }
+          if (logoutBtn) logoutBtn.style.display = 'inline-block';
+          
+          applyRolePolicy();
+        } else {
+          if (overlay) overlay.style.display = 'flex';
+          if (container) container.style.opacity = '0.1';
+          if (chatTrigger) chatTrigger.style.display = 'none';
+          if (userBadge) userBadge.style.display = 'none';
+          if (logoutBtn) logoutBtn.style.display = 'none';
+        }
+      }
+      
+      function applyRolePolicy() {
+        const role = localStorage.getItem('user_role');
+        const styleId = 'role-policy-styles';
+        let styleEl = document.getElementById(styleId);
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = styleId;
+          document.head.appendChild(styleEl);
+        }
+        
+        if (role === 'user') {
+          // Hide uploader box and local file delete button for standard users
+          styleEl.innerHTML = `
+            .uploader-box { display: none !important; }
+            #localFileDeleteBtn { display: none !important; }
+          `;
+        } else {
+          styleEl.innerHTML = '';
+        }
+      }
+      
+      window.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('loginUsername');
+        const passwordInput = document.getElementById('loginPassword');
+        const errorMsg = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        checkAuth();
+        
+        if (form) {
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            
+            if (username === 'admin' && password === 'admin') {
+              localStorage.setItem('logged_in', 'true');
+              localStorage.setItem('user_role', 'admin');
+              localStorage.setItem('username', 'admin');
+              errorMsg.style.display = 'none';
+              checkAuth();
+            } else if (username === 'user' && password === 'user') {
+              localStorage.setItem('logged_in', 'true');
+              localStorage.setItem('user_role', 'user');
+              localStorage.setItem('username', 'user');
+              errorMsg.style.display = 'none';
+              checkAuth();
+            } else {
+              errorMsg.style.display = 'block';
+            }
+          });
+        }
+        
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('logged_in');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('username');
+            checkAuth();
+          });
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
