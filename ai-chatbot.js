@@ -123,6 +123,34 @@
       const badge = triggerBtn.querySelector('.pulse-badge');
       if (badge) badge.remove();
     }, { once: true });
+
+    // AI Logs Handlers
+    const downloadLogsBtn = document.getElementById('aiDownloadLogsBtn');
+    const clearLogsBtn = document.getElementById('aiClearLogsBtn');
+
+    if (downloadLogsBtn) {
+      downloadLogsBtn.addEventListener('click', () => {
+        const logs = localStorage.getItem('ai_chat_logs') || '[]';
+        const blob = new Blob([logs], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ai_logs.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    if (clearLogsBtn) {
+      clearLogsBtn.addEventListener('click', () => {
+        if (confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử AI Logs cục bộ?')) {
+          localStorage.removeItem('ai_chat_logs');
+          appendBotMessage("🧹 Đã xóa sạch nhật ký AI Logs thành công!");
+        }
+      });
+    }
   });
 
   // Global window function to open program details
@@ -148,6 +176,23 @@
     }
   }
 
+  // Logging function
+  function saveLocalAiLog(userMsg, responseText, isOnline) {
+    let logs = [];
+    try {
+      logs = JSON.parse(localStorage.getItem('ai_chat_logs')) || [];
+    } catch(e) {
+      logs = [];
+    }
+    logs.push({
+      timestamp: new Date().toLocaleString('vi-VN'),
+      user_message: userMsg,
+      response_text: responseText,
+      mode: isOnline ? 'Gemini API (Online)' : 'Offline (Cục bộ)'
+    });
+    localStorage.setItem('ai_chat_logs', JSON.stringify(logs));
+  }
+
   // Handle Send Message
   async function handleSendMessage() {
     const userText = chatInput.value.trim();
@@ -169,6 +214,7 @@
         const reply = processOfflineSearch(userText);
         hideTypingIndicator(typingIndicator);
         appendBotMessage(reply);
+        saveLocalAiLog(userText, reply, false);
       } else {
         // Online Gemini
         if (!apiKey) {
@@ -179,11 +225,14 @@
         const reply = await queryGeminiAPI(userText);
         hideTypingIndicator(typingIndicator);
         appendBotMessage(reply);
+        saveLocalAiLog(userText, reply, true);
       }
     } catch (err) {
       console.error(err);
       hideTypingIndicator(typingIndicator);
-      appendBotMessage("❌ Đã xảy ra lỗi trong quá trình xử lý phản hồi. Vui lòng kiểm tra kết nối mạng hoặc API Key của bạn.");
+      const errMsg = "❌ Đã xảy ra lỗi trong quá trình xử lý phản hồi. Vui lòng kiểm tra kết nối mạng hoặc API Key của bạn.";
+      appendBotMessage(errMsg);
+      saveLocalAiLog(userText, errMsg, chatMode === 'online');
     }
   }
 
