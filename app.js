@@ -132,6 +132,9 @@ const syncExportSize = document.getElementById('syncExportSize');
 const exportBackupBtn = document.getElementById('exportBackupBtn');
 const syncFileInput = document.getElementById('syncFileInput');
 const syncImportStatus = document.getElementById('syncImportStatus');
+const syncExportJsonText = document.getElementById('syncExportJsonText');
+const syncImportJsonText = document.getElementById('syncImportJsonText');
+const importJsonBtn = document.getElementById('importJsonBtn');
 
 // Fullscreen Viewer DOM
 const fullscreenViewer = document.getElementById('fullscreenViewer');
@@ -219,6 +222,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   exportBackupBtn.addEventListener('click', exportDatabase);
   syncFileInput.addEventListener('change', handleImportBackup);
+  if (importJsonBtn) {
+    importJsonBtn.addEventListener('click', handleImportJsonText);
+  }
 });
 
 // ====================================================================
@@ -1023,6 +1029,8 @@ async function openSyncModal() {
   document.body.style.overflow = 'hidden';
   syncImportStatus.style.display = 'none';
   syncFileInput.value = '';
+  if (syncExportJsonText) syncExportJsonText.value = '';
+  if (syncImportJsonText) syncImportJsonText.value = '';
   await refreshSyncInfo();
 }
 
@@ -1062,6 +1070,10 @@ async function exportDatabase() {
     }
     
     const jsonString = JSON.stringify(backupData);
+    if (syncExportJsonText) {
+      syncExportJsonText.value = jsonString;
+    }
+    
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     
@@ -1139,4 +1151,57 @@ async function handleImportBackup(e) {
     }
   };
   reader.readAsText(file);
+}
+
+async function handleImportJsonText() {
+  if (!syncImportJsonText) return;
+  const jsonText = syncImportJsonText.value.trim();
+  if (!jsonText) {
+    alert("Vui lòng dán chuỗi JSON sao lưu.");
+    return;
+  }
+  
+  syncImportStatus.style.display = 'block';
+  syncImportStatus.className = 'sync-working-status';
+  syncImportStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang nhập và đồng bộ dữ liệu...';
+  
+  try {
+    const backupData = JSON.parse(jsonText);
+    if (!Array.isArray(backupData)) {
+      throw new Error("Định dạng dữ liệu sao lưu không hợp lệ.");
+    }
+    
+    let importedCount = 0;
+    for (const item of backupData) {
+      if (!item.programId || !item.name || !item.type || !item.base64) {
+        continue;
+      }
+      const blob = base64ToBlob(item.base64, item.type);
+      blob.name = item.name;
+      blob.type = item.type;
+      
+      await saveFileLocal(item.programId, blob);
+      
+      const idx = trainingPrograms.findIndex(p => p.id === parseInt(item.programId));
+      if (idx !== -1) {
+        trainingPrograms[idx].doc_status = 'Có';
+      }
+      importedCount++;
+    }
+    
+    updateStats();
+    applyFilters();
+    await refreshSyncInfo();
+    
+    syncImportStatus.className = 'sync-success-status';
+    syncImportStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đồng bộ thành công! Đã nhập ${importedCount} tài liệu vào trình duyệt này.`;
+    
+    if (selectedProgram) {
+      await refreshLocalFileStatus();
+    }
+  } catch (err) {
+    console.error("Lỗi nhập dữ liệu JSON:", err);
+    syncImportStatus.className = 'sync-error-status';
+    syncImportStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Nhập dữ liệu thất bại. Vui lòng đảm bảo chuỗi JSON đúng định dạng.';
+  }
 }
