@@ -116,6 +116,50 @@ const localFileStatus = document.getElementById('localFileStatus');
 const localFileName = document.getElementById('localFileName');
 const localFileDownloadBtn = document.getElementById('localFileDownloadBtn');
 const localFileDeleteBtn = document.getElementById('localFileDeleteBtn');
+const localFileViewBtn = document.getElementById('localFileViewBtn');
+const localFileViewerContainer = document.getElementById('localFileViewerContainer');
+const localFileViewerContent = document.getElementById('localFileViewerContent');
+const closeLocalFileViewerBtn = document.getElementById('closeLocalFileViewerBtn');
+
+let currentViewObjectUrl = null;
+
+// Sync Modal DOM
+const syncDataBtn = document.getElementById('syncDataBtn');
+const syncModal = document.getElementById('syncModal');
+const syncModalCloseBtn = document.getElementById('syncModalCloseBtn');
+const syncExportCount = document.getElementById('syncExportCount');
+const syncExportSize = document.getElementById('syncExportSize');
+const exportBackupBtn = document.getElementById('exportBackupBtn');
+const syncFileInput = document.getElementById('syncFileInput');
+const syncImportStatus = document.getElementById('syncImportStatus');
+
+// Fullscreen Viewer DOM
+const fullscreenViewer = document.getElementById('fullscreenViewer');
+const closeFullscreenViewerBtn = document.getElementById('closeFullscreenViewerBtn');
+const fullscreenViewerTitle = document.getElementById('fullscreenViewerTitle');
+const fullscreenOpenTabBtn = document.getElementById('fullscreenOpenTabBtn');
+const fullscreenDownloadBtn = document.getElementById('fullscreenDownloadBtn');
+const fullscreenViewerContent = document.getElementById('fullscreenViewerContent');
+const pdfControlsBar = document.getElementById('pdfControlsBar');
+const pdfPrevPageBtn = document.getElementById('pdfPrevPageBtn');
+const pdfNextPageBtn = document.getElementById('pdfNextPageBtn');
+const pdfCurrentPageNum = document.getElementById('pdfCurrentPageNum');
+const pdfTotalPages = document.getElementById('pdfTotalPages');
+const pdfZoomOutBtn = document.getElementById('pdfZoomOutBtn');
+const pdfZoomInBtn = document.getElementById('pdfZoomInBtn');
+const pdfZoomPercent = document.getElementById('pdfZoomPercent');
+
+// PDF.js State Variables
+let currentPdfDoc = null;
+let currentPdfPageNum = 1;
+let currentPdfScale = 1.0;
+let isRenderingPage = false;
+let pageRenderingPending = null;
+
+// Configure PDF.js Worker
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+}
 
 // ====================================================================
 // INITIALIZATION
@@ -148,6 +192,33 @@ document.addEventListener('DOMContentLoaded', () => {
   localFileInput.addEventListener('change', handleLocalFileUpload);
   localFileDownloadBtn.addEventListener('click', downloadLocalFile);
   localFileDeleteBtn.addEventListener('click', deleteLocalFile);
+  localFileViewBtn.addEventListener('click', viewLocalFile);
+  closeLocalFileViewerBtn.addEventListener('click', () => {
+    localFileViewerContainer.style.display = 'none';
+    localFileViewerContent.innerHTML = '';
+    if (currentViewObjectUrl) {
+      URL.revokeObjectURL(currentViewObjectUrl);
+      currentViewObjectUrl = null;
+    }
+  });
+
+  // Fullscreen Viewer Event Listeners
+  closeFullscreenViewerBtn.addEventListener('click', closeFullscreenViewer);
+  fullscreenOpenTabBtn.addEventListener('click', openFullscreenFileInNewTab);
+  fullscreenDownloadBtn.addEventListener('click', downloadFullscreenFile);
+  pdfPrevPageBtn.addEventListener('click', showPrevPdfPage);
+  pdfNextPageBtn.addEventListener('click', showNextPdfPage);
+  pdfZoomOutBtn.addEventListener('click', zoomOutPdf);
+  pdfZoomInBtn.addEventListener('click', zoomInPdf);
+
+  // Sync Modal Events
+  syncDataBtn.addEventListener('click', openSyncModal);
+  syncModalCloseBtn.addEventListener('click', closeSyncModal);
+  syncModal.addEventListener('click', (e) => {
+    if (e.target === syncModal) closeSyncModal();
+  });
+  exportBackupBtn.addEventListener('click', exportDatabase);
+  syncFileInput.addEventListener('change', handleImportBackup);
 });
 
 // ====================================================================
@@ -470,6 +541,16 @@ function closeModal() {
   detailModal.style.display = 'none';
   document.body.style.overflow = ''; // Unlock body scroll
   selectedProgram = null;
+  
+  // Hide viewer container and clear contents
+  if (localFileViewerContainer) {
+    localFileViewerContainer.style.display = 'none';
+    localFileViewerContent.innerHTML = '';
+  }
+  if (currentViewObjectUrl) {
+    URL.revokeObjectURL(currentViewObjectUrl);
+    currentViewObjectUrl = null;
+  }
 }
 
 // ====================================================================
@@ -485,6 +566,14 @@ async function refreshLocalFileStatus() {
       localFileStatus.style.display = 'flex';
     } else {
       localFileStatus.style.display = 'none';
+      if (localFileViewerContainer) {
+        localFileViewerContainer.style.display = 'none';
+        localFileViewerContent.innerHTML = '';
+      }
+      if (currentViewObjectUrl) {
+        URL.revokeObjectURL(currentViewObjectUrl);
+        currentViewObjectUrl = null;
+      }
     }
     localFileInput.value = ''; // Reset input element
   } catch (e) {
@@ -563,6 +652,16 @@ async function deleteLocalFile() {
   try {
     await deleteFileLocal(selectedProgram.id);
     
+    // Hide viewer container
+    if (localFileViewerContainer) {
+      localFileViewerContainer.style.display = 'none';
+      localFileViewerContent.innerHTML = '';
+    }
+    if (currentViewObjectUrl) {
+      URL.revokeObjectURL(currentViewObjectUrl);
+      currentViewObjectUrl = null;
+    }
+    
     // Refresh modal UI
     await refreshLocalFileStatus();
     alert("Đã xóa tài liệu cục bộ thành công!");
@@ -570,6 +669,67 @@ async function deleteLocalFile() {
     console.error(err);
     alert("Xóa tệp thất bại.");
   }
+}
+
+async function viewLocalFile() {
+  if (!selectedProgram) return;
+  
+  try {
+    const fileRecord = await getFileLocal(selectedProgram.id);
+    if (!fileRecord) {
+      alert("Không tìm thấy tệp cục bộ.");
+      return;
+    }
+    
+    // Check if on mobile view to trigger the fullscreen viewer
+    if (window.innerWidth <= 768) {
+      openFullscreenViewer(fileRecord);
+      return;
+    }
+    
+    // Clear previous content
+    localFileViewerContent.innerHTML = '';
+    if (currentViewObjectUrl) {
+      URL.revokeObjectURL(currentViewObjectUrl);
+      currentViewObjectUrl = null;
+    }
+    
+    const fileName = fileRecord.name.toLowerCase();
+    
+    if (fileName.endsWith('.pdf')) {
+      currentViewObjectUrl = URL.createObjectURL(fileRecord.data);
+      const embedUrl = currentViewObjectUrl + '#toolbar=0&navpanes=0&scrollbar=0';
+      localFileViewerContent.innerHTML = `<iframe src="${embedUrl}" width="100%" height="100%" style="border: none;"></iframe>`;
+    } else if (fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.gif') || fileName.endsWith('.webp')) {
+      currentViewObjectUrl = URL.createObjectURL(fileRecord.data);
+      localFileViewerContent.innerHTML = `<img src="${currentViewObjectUrl}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />`;
+    } else if (fileName.endsWith('.txt')) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        localFileViewerContent.innerHTML = `<pre style="width: 100%; height: 100%; padding: 1rem; overflow: auto; background: var(--bg-secondary); color: var(--text-primary); margin: 0; text-align: left; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap; word-break: break-all;">${escapeHTML(e.target.result)}</pre>`;
+      };
+      reader.readAsText(fileRecord.data);
+    } else {
+      localFileViewerContent.innerHTML = `<div style="padding: 2rem; color: #ffffff; text-align: center;">Định dạng file "${fileRecord.name}" chưa hỗ trợ xem trực tuyến trực tiếp. Vui lòng sử dụng nút Tải về để xem.</div>`;
+    }
+    
+    localFileViewerContainer.style.display = 'flex';
+  } catch (err) {
+    console.error(err);
+    alert("Không thể hiển thị tệp.");
+  }
+}
+
+function escapeHTML(str) {
+  return str.replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag)
+  );
 }
 
 // ====================================================================
@@ -607,4 +767,376 @@ function exportExcel() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ====================================================================
+// FULLSCREEN MOBILE-FRIENDLY DOCUMENT VIEWER
+// ====================================================================
+async function openFullscreenViewer(fileRecord) {
+  if (!fileRecord) return;
+  
+  // Display the fullscreen container
+  fullscreenViewer.style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // Lock background scroll
+  
+  fullscreenViewerTitle.innerText = fileRecord.name;
+  fullscreenViewerContent.innerHTML = '<div style="color: var(--text-secondary); text-align: center;"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem; color: var(--primary);"></i><br>Đang tải tài liệu...</div>';
+  
+  if (currentViewObjectUrl) {
+    URL.revokeObjectURL(currentViewObjectUrl);
+  }
+  
+  currentViewObjectUrl = URL.createObjectURL(fileRecord.data);
+  const fileName = fileRecord.name.toLowerCase();
+  
+  if (fileName.endsWith('.pdf')) {
+    pdfControlsBar.style.display = 'flex';
+    try {
+      const arrayBuffer = await fileRecord.data.arrayBuffer();
+      // Reset PDF.js state
+      currentPdfPageNum = 1;
+      currentPdfScale = 1.0; 
+      isRenderingPage = false;
+      pageRenderingPending = null;
+      
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      currentPdfDoc = await loadingTask.promise;
+      pdfTotalPages.innerText = currentPdfDoc.numPages;
+      
+      renderPdfPage(currentPdfPageNum);
+    } catch (err) {
+      console.error("PDF.js loading error, falling back to iframe:", err);
+      fullscreenViewerContent.innerHTML = `<iframe src="${currentViewObjectUrl}" width="100%" height="100%" style="border: none;"></iframe>`;
+      pdfControlsBar.style.display = 'none';
+    }
+  } else if (fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.gif') || fileName.endsWith('.webp')) {
+    pdfControlsBar.style.display = 'none';
+    currentPdfDoc = null;
+    fullscreenViewerContent.innerHTML = `<img src="${currentViewObjectUrl}" alt="${fileRecord.name}" />`;
+  } else if (fileName.endsWith('.txt')) {
+    pdfControlsBar.style.display = 'none';
+    currentPdfDoc = null;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      fullscreenViewerContent.innerHTML = `<pre>${escapeHTML(e.target.result)}</pre>`;
+    };
+    reader.readAsText(fileRecord.data);
+  } else {
+    // Other file types fallback
+    pdfControlsBar.style.display = 'none';
+    currentPdfDoc = null;
+    fullscreenViewerContent.innerHTML = `
+      <div style="padding: 2rem; text-align: center; max-width: 450px;">
+        <i class="fa-solid fa-file-circle-question" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">Không thể xem trực tiếp tệp này</div>
+        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Định dạng file "${fileRecord.name}" chưa được hỗ trợ xem trực tiếp trên điện thoại.</div>
+        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+          <button onclick="downloadFullscreenFile()" class="btn btn-primary"><i class="fa-solid fa-download"></i> Tải về</button>
+          <button onclick="openFullscreenFileInNewTab()" class="btn btn-secondary"><i class="fa-solid fa-up-right-from-square"></i> Mở tab mới</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function closeFullscreenViewer() {
+  fullscreenViewer.style.display = 'none';
+  fullscreenViewerContent.innerHTML = '';
+  pdfControlsBar.style.display = 'none';
+  
+  if (currentViewObjectUrl) {
+    URL.revokeObjectURL(currentViewObjectUrl);
+    currentViewObjectUrl = null;
+  }
+  currentPdfDoc = null;
+  
+  // If detailModal is still open, keep the body scroll locked
+  if (detailModal && detailModal.style.display === 'flex') {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+}
+
+function renderPdfPage(num) {
+  if (!currentPdfDoc) return;
+  isRenderingPage = true;
+  
+  // Disable buttons while rendering
+  pdfPrevPageBtn.disabled = num <= 1;
+  pdfNextPageBtn.disabled = num >= currentPdfDoc.numPages;
+  pdfCurrentPageNum.innerText = num;
+  
+  currentPdfDoc.getPage(num).then(page => {
+    // Clear previous contents
+    fullscreenViewerContent.innerHTML = '';
+    
+    // Create canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    fullscreenViewerContent.appendChild(canvas);
+    
+    // Get viewport at default zoom
+    const viewport = page.getViewport({ scale: 1.0 });
+    
+    // Calculate scale if scale is default to fit mobile container width nicely
+    let scale = currentPdfScale;
+    if (scale === 1.0) {
+      const containerWidth = fullscreenViewerContent.clientWidth - 24; // Padding
+      scale = containerWidth / viewport.width;
+      // Cap initial auto-scale to reasonable boundaries
+      if (scale > 1.5) scale = 1.5;
+      if (scale < 0.5) scale = 0.5;
+      currentPdfScale = scale;
+    }
+    
+    pdfZoomPercent.innerText = Math.round(currentPdfScale * 100) + '%';
+    
+    const responsiveViewport = page.getViewport({ scale: currentPdfScale });
+    canvas.height = responsiveViewport.height;
+    canvas.width = responsiveViewport.width;
+    
+    const renderContext = {
+      canvasContext: ctx,
+      viewport: responsiveViewport
+    };
+    
+    const renderTask = page.render(renderContext);
+    
+    renderTask.promise.then(() => {
+      isRenderingPage = false;
+      if (pageRenderingPending !== null) {
+        renderPdfPage(pageRenderingPending);
+        pageRenderingPending = null;
+      }
+    });
+  }).catch(err => {
+    console.error("Error rendering page:", err);
+    isRenderingPage = false;
+  });
+}
+
+function queueRenderPage(num) {
+  if (isRenderingPage) {
+    pageRenderingPending = num;
+  } else {
+    renderPdfPage(num);
+  }
+}
+
+function showPrevPdfPage() {
+  if (currentPdfPageNum <= 1) return;
+  currentPdfPageNum--;
+  queueRenderPage(currentPdfPageNum);
+}
+
+function showNextPdfPage() {
+  if (!currentPdfDoc || currentPdfPageNum >= currentPdfDoc.numPages) return;
+  currentPdfPageNum++;
+  queueRenderPage(currentPdfPageNum);
+}
+
+function zoomOutPdf() {
+  if (currentPdfScale <= 0.3) return;
+  currentPdfScale -= 0.15;
+  queueRenderPage(currentPdfPageNum);
+}
+
+function zoomInPdf() {
+  if (currentPdfScale >= 3.0) return;
+  currentPdfScale += 0.15;
+  queueRenderPage(currentPdfPageNum);
+}
+
+function openFullscreenFileInNewTab() {
+  if (currentViewObjectUrl) {
+    window.open(currentViewObjectUrl, '_blank');
+  }
+}
+
+function downloadFullscreenFile() {
+  if (!currentViewObjectUrl) return;
+  const a = document.createElement('a');
+  a.href = currentViewObjectUrl;
+  a.download = fullscreenViewerTitle.innerText;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ====================================================================
+// DATABASE SYNCHRONIZATION (BACKUP & RESTORE)
+// ====================================================================
+async function getAllFilesLocal() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, "readonly");
+    const store = transaction.objectStore(storeName);
+    const request = store.getAll();
+    request.onsuccess = (e) => resolve(e.target.result);
+    request.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = (e) => reject(reader.target.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function base64ToBlob(base64, type) {
+  const binStr = atob(base64);
+  const len = binStr.length;
+  const arr = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    arr[i] = binStr.charCodeAt(i);
+  }
+  return new Blob([arr], { type: type });
+}
+
+async function refreshSyncInfo() {
+  try {
+    const files = await getAllFilesLocal();
+    let totalSize = 0;
+    files.forEach(f => {
+      if (f.data) totalSize += f.data.size;
+    });
+    syncExportCount.innerText = `${files.length} tệp`;
+    
+    let sizeText = '0 KB';
+    if (totalSize >= 1024 * 1024) {
+      sizeText = (totalSize / (1024 * 1024)).toFixed(2) + ' MB';
+    } else {
+      sizeText = (totalSize / 1024).toFixed(1) + ' KB';
+    }
+    syncExportSize.innerText = sizeText;
+  } catch (err) {
+    console.error("Lỗi khi tải thông tin đồng bộ:", err);
+  }
+}
+
+async function openSyncModal() {
+  syncModal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  syncImportStatus.style.display = 'none';
+  syncFileInput.value = '';
+  await refreshSyncInfo();
+}
+
+function closeSyncModal() {
+  syncModal.style.display = 'none';
+  // If detailModal is open, keep body scroll locked, else unlock
+  if (detailModal && detailModal.style.display === 'flex') {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+}
+
+async function exportDatabase() {
+  const originalText = exportBackupBtn.innerHTML;
+  exportBackupBtn.disabled = true;
+  exportBackupBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang chuẩn bị tệp sao lưu...';
+  
+  try {
+    const files = await getAllFilesLocal();
+    if (files.length === 0) {
+      alert("Không có tài liệu nào để sao lưu trên thiết bị này.");
+      exportBackupBtn.disabled = false;
+      exportBackupBtn.innerHTML = originalText;
+      return;
+    }
+    
+    const backupData = [];
+    for (const f of files) {
+      const base64Data = await blobToBase64(f.data);
+      backupData.push({
+        programId: f.programId,
+        name: f.name,
+        type: f.type,
+        base64: base64Data
+      });
+    }
+    
+    const jsonString = JSON.stringify(backupData);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bachmai_database_backup_${dateStr}.bachmai`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Lỗi xuất database:", err);
+    alert("Có lỗi xảy ra trong quá trình xuất sao lưu.");
+  } finally {
+    exportBackupBtn.disabled = false;
+    exportBackupBtn.innerHTML = originalText;
+  }
+}
+
+async function handleImportBackup(e) {
+  if (!e.target.files.length) return;
+  const file = e.target.files[0];
+  
+  syncImportStatus.style.display = 'block';
+  syncImportStatus.className = 'sync-working-status';
+  syncImportStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang nhập và đồng bộ dữ liệu...';
+  
+  const reader = new FileReader();
+  reader.onload = async function(evt) {
+    try {
+      const backupData = JSON.parse(evt.target.result);
+      if (!Array.isArray(backupData)) {
+        throw new Error("Định dạng tệp sao lưu không hợp lệ.");
+      }
+      
+      let importedCount = 0;
+      for (const item of backupData) {
+        if (!item.programId || !item.name || !item.type || !item.base64) {
+          continue; // skip malformed records
+        }
+        
+        const blob = base64ToBlob(item.base64, item.type);
+        // Add file metadata properties
+        blob.name = item.name;
+        blob.type = item.type;
+        
+        // Save to IndexedDB
+        await saveFileLocal(item.programId, blob);
+        
+        // Update in-memory trainingPrograms state
+        const idx = trainingPrograms.findIndex(p => p.id === parseInt(item.programId));
+        if (idx !== -1) {
+          trainingPrograms[idx].doc_status = 'Có';
+        }
+        importedCount++;
+      }
+      
+      // Update UI
+      updateStats();
+      applyFilters();
+      await refreshSyncInfo();
+      
+      syncImportStatus.className = 'sync-success-status';
+      syncImportStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đồng bộ thành công! Đã nhập ${importedCount} tài liệu vào trình duyệt này.`;
+      
+      // If we are currently looking at a program details modal, refresh it
+      if (selectedProgram) {
+        await refreshLocalFileStatus();
+      }
+    } catch (err) {
+      console.error("Lỗi nhập dữ liệu:", err);
+      syncImportStatus.className = 'sync-error-status';
+      syncImportStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Nhập dữ liệu thất bại. Vui lòng đảm bảo tệp tin đúng định dạng `.bachmai`.';
+    }
+  };
+  reader.readAsText(file);
 }
