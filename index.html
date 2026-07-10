@@ -140,6 +140,7 @@
       <div class="button-group">
         <button id="resetFiltersBtn" class="btn btn-secondary"><i class="fa-solid fa-filter-circle-xmark"></i> Xóa bộ lọc</button>
         <button id="exportExcelBtn" class="btn btn-secondary"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
+        <button id="syncDataBtn" class="btn btn-secondary"><i class="fa-solid fa-rotate"></i> Đồng bộ dữ liệu</button>
       </div>
     </section>
 
@@ -266,6 +267,66 @@
                 <button id="localFileDeleteBtn" class="btn btn-danger" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-trash"></i> Xóa</button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Database Synchronization Modal -->
+  <div id="syncModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <span class="card-section">ĐỒNG BỘ DỮ LIỆU</span>
+          <h2>Đồng Bộ Giữa Các Thiết Bị</h2>
+        </div>
+        <button id="syncModalCloseBtn" class="modal-close" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;">
+          Dữ liệu tài liệu được lưu trữ cục bộ trong trình duyệt của bạn để đảm bảo tính bảo mật. Bạn có thể xuất file sao lưu từ máy tính rồi chuyển sang điện thoại (hoặc ngược lại) để đồng bộ hóa dữ liệu.
+        </p>
+
+        <!-- Export (Sao lưu) Section -->
+        <div class="sync-section-box" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+          <div style="font-weight: 600; font-size: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-file-export"></i> 1. Sao lưu từ thiết bị này (Export)
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Tải về toàn bộ tài liệu đính kèm trên thiết bị này dưới dạng một file sao lưu duy nhất.
+          </p>
+          <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 120px; background: var(--bg-secondary); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); text-align: center;">
+              <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">TỔNG SỐ TỆP</div>
+              <div id="syncExportCount" style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">0 tệp</div>
+            </div>
+            <div style="flex: 1; min-width: 120px; background: var(--bg-secondary); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); text-align: center;">
+              <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">DUNG LƯỢNG</div>
+              <div id="syncExportSize" style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">0 KB</div>
+            </div>
+          </div>
+          <button id="exportBackupBtn" class="btn btn-primary" style="width: 100%; justify-content: center; height: 44px;"><i class="fa-solid fa-download"></i> Tải file sao lưu (.bachmai)</button>
+        </div>
+
+        <!-- Import (Khôi phục / Gộp dữ liệu) Section -->
+        <div class="sync-section-box" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-glass); margin-top: 1.25rem;">
+          <div style="font-weight: 600; font-size: 1rem; color: var(--secondary); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-file-import"></i> 2. Nhập dữ liệu từ thiết bị khác (Import)
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Chọn file sao lưu `.bachmai` đã tải từ thiết bị khác để ghi đè hoặc bổ sung dữ liệu vào trình duyệt này.
+          </p>
+          
+          <div class="uploader-box" style="padding: 1.5rem; border-style: dashed; position: relative;">
+            <i class="fa-solid fa-cloud-arrow-up uploader-icon" style="color: var(--secondary); font-size: 1.75rem;"></i>
+            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.25rem;">Chọn tệp sao lưu .bachmai của bạn</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Kéo thả file vào đây hoặc click để duyệt</div>
+            <input type="file" id="syncFileInput" accept=".bachmai" class="uploader-input">
+          </div>
+
+          <div id="syncImportStatus" style="display: none; margin-top: 1rem; padding: 0.75rem; border-radius: var(--radius-sm); text-align: center; font-size: 0.85rem; font-weight: 600;">
+            <!-- Dynamic Status Text -->
           </div>
         </div>
       </div>
